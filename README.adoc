@@ -1,0 +1,199 @@
+= Open Distribution Initiative
+
+The Open Distribution Initiative is a concept for developing more scalable and
+federated means of distribution free and open source software artifacts.
+
+== Distribution Challenges
+
+Distribution of artifacts for free and open source projects faces a number of
+challenges, not the least of which is financial. Many major projects rely on
+corporate funding for CDN or other hosting services to distribute key artifacts
+to their downstream developers and end-users..For smaller projects, corporate
+or academic support for their software distribution is not an option leaving
+many to rely heavily on proprietary services like GitHub (Releases/Packages) or
+platform-specific artifact repositories (such as
+link:https://rubygems.org[Rubygems.org],
+link:https://pypi.org/[Python Package Index], etc).
+
+Some "first generation projects" (those that predate or are concurrent with the SourceForge era) may rely on mirror networks for artifact distribution. The patchwork of mirrors powering the
+link:https://apache.org[Apache Software Foundation],
+link:https://debian.org[Debian], or
+link:https://opensuse.org[openSUSE]
+helps them distribute many terabytes of data per month, but typically relies on
+a handful of volunteers in order to remain viable. Additionally, mirroring
+relationships are typically formed between individuals with significant systems
+administration experience, leading to a very clear skew towards operating
+systems and infrastructure tools being distributed through these mirroring
+networks.
+
+=== Corporate Funding
+
+There's nothing wrong with corporate funding for infrastructure. Solely relying
+on corporate generosity can and does present challenges for a number of
+projects seeking to maintain funding continuity in their budgets.
+
+Some projects which rely heavily on corporate generosity for their distribution are:
+
+* link:https://maven.org[Maven Central] which is owned and operated by Sonatype, Inc.
+* link:https://npm.org[NPM] which is owned and operated by Microsoft.
+* GitHub releases, which is owned and operated by Microsoft.
+
+=== Mixed Funding
+
+* link:https://pypi.org/[Python Package Index] which is supported by the Python Software Foundation, with infrastructure sponsorship from AWS, Google, Fastly.
+* link:https://rubygems.org[Rubygems.org] which is supported by Ruby Together and Ruby Central, with infrastructure sponsorship from Fastly.
+* link:https://jenkins.io[Jenkins] which is supported by the Continuous Delivery Foundation, a corporate trade organization, with a non-trivial part of distribution served via a volunteer-managed mirror network.
+* link:https://opensuse.org[openSUSE] which is sponsored by SUSE GmbH in addition to other companies, with a non-trivial part of distribution served via a volunteer-managed mirror network.
+
+
+== Concept
+
+At it's core the current concept for ODI (Open Distribution Initiative) is that
+of central coordinating directory servers and relays which ultimately service
+user-traffic. The directory servers hold the shared inventory of what artifacts
+are available, checksums, and distribution statistics. Relays on the other hand
+are intended to cache and forward some subset of the catalog to end clients.
+The relays are intended to be owned and operated by a large heterogeneous mix
+of users, whereas directory servers are more likely to operated on high
+throughput academic or corporate networks. In either case, the goal is to limit
+centralization to the extent possible.
+
+ODI operates over traditional HTTP with the custom software for directories and
+relays, but clients should never require customized software to consume
+artifacts.
+
+[NOTE]
+====
+ODI is inspired somewhat by
+link:https://www.torproject.org/[Tor] and its network of relays and bridges.
+====
+
+.An example ODI network topology
+[source]
+----
+everest.example.com
+                                     odi-r1.osuosl.org
+ ODI Directory
++---------------+                     ODI Relay
+|               |                    +-------------+
+|  +---------+  |                    | +---------+ |
+|  | Catalog +-------------------------> Catalog | |
+|  +---------+  |                    | +---------+ |
+|  +---------+  |                    +-------------+
+|  | Catalog +--------------+
+|  +---------+  |           |        odi.sonic.com
+|  +---------+  |           |
+|  | Catalog +-----+-----+  |         ODI Relay
+|  +---------+  |  |     |  |        +-------------+
+|               |  |     |  |        | +---------+ |
++---------------+  |     |  +----------> Catalog | |
+                   |     |           | +---------+ |
+shasta.example.com |     |           +-------------+
+                   |     |
+ ODI Directory     |     |           odi.ocf.berkeley.edu
++---------------+  |     |
+|               |  |     |            ODI Relay
+|  +---------+  |  |     |           +-------------+
+|  | Catalog <-----+     |           | +---------+ |
+|  +---------+  |        +-------------> Catalog | |
+|  +---------+  |                    | +---------+ |
+|  | Catalog +-----------+           | +---------+ |
+|  +---------+  |        +-------------> Catalog | |
+|  +---------+  |                    | +---------+ |
+|  | Catalog +-----------+           | +---------+ |
+|  +---------+  |        +-------------> Catalog | |
+|               |                    | +---------+ |
++---------------+                    +-------------+
+----
+
+In the topology above there are two directory servers that have been deployed.
+An example request for an artifact from `everest.example.com` might follow the
+following path:
+
+
+.Client request flow
+[source]
+----
+       Client                                    Directory              Relay
+         +                                           +                    +
+         |  Requests /r/artifact-1.jar               |                    |
+         +-----------------------------------------> |                    |
+         |                                           |                    |
+         |                                    Lookup relay table          |
+         |                                    for distribution            |
+         |                                           |                    |
+         |                302 Found on Relay         |                    |
+         | <-----------------------------------------+                    |
+         |                                           |                    |
+         |  Requests /r/artifact-1.jar               |                    |
+         +--------------------------------------------------------------> |
+         |                                           |                    |
+         |                                           |    200 Ok w/ bytes |
+         | <--------------------------------------------------------------+
+         |                                           |                    |
+----
+
+=== Relays
+
+Relays are just simple HTTP servers with a valid domain name and TLS
+certificate. Additionally, they must run the `odi-relayd` in order to ensure
+they are keeping the proper synchronization with the configured ODI
+Directories.
+
+==== Seeding 
+
+In order for an ODI Relay to work properly, it must have a catalog downloaded
+and ready to serve. While not yet defined, this is expected to be handled through a combination of relay-specified configuration such as:
+
+* How much disk space can be used.
+* How much bandwidth may be utilized.
+* Which ODI Directories the operator wishes to interact with.
+* What catalogs or catalog tags is the operator interested in mirroring.
+
+A relay would then register with configured directories, providing some of the
+configuration information and a pre-shared key the relay generated for
+authenticating future inbound requests from the directories.
+
+Once the relay has passed self-test by the directory, the directory would
+assign some portion of the requested catalog(s) to the relay and notify the
+relay to begin downloading the artifacts.
+
+Upon completion, the relay would inform the directory that it is ready to begin
+operation. Once the directory confirms the relay is properly running, it would
+begin directing traffic for the artifacts assigned to that relay.
+
+==== Clean up
+
+=== Directories
+
+The ODI Directory is the most complex part of the equation and is responsible
+for both maintaining relationships with active relays but also other
+directories. The directory-to-directory federation helps ensure that no single
+directory may end up as a single point of failure.
+
+Statistics need to be kept to identify "hot" artifacts which require more
+capacity. The directory is also responsible for notifying relays of new artifacts in
+their respective catalogs.
+
+
+=== Catalogs
+
+[NOTE]
+====
+The exact size and shape of ODI catalogs has yet to be defined
+====
+
+=== Open Questions
+
+* How would a catalog on a directory be updated? When a project pushes a
+  release, ODI _could_ act similar to an origin-pull CDN model wherein a
+  project's catalog is configured to pull from a lower bandwidth origin server
+  and then effectively disseminate that through the ODI network. Another option
+  would be to simply rely on "triggering" but that may require some sort of
+  active user management/API tier, whereas origin-pull could operate via static
+  configuration managed by pull requests.
+* Should catalogs be organized based around tags? Ecosystem (e.g. Python)? What
+  level of granularity is useful here? The "Group" in an rpmspec might be a
+  useful pattern to emulate here.
+
+
