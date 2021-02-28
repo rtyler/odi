@@ -1,50 +1,19 @@
+:toc: macro
+:toclevels: 3
+ifdef::env-github[]
+:tip-caption: :bulb:
+:note-caption: :information_source:
+:important-caption: :heavy_exclamation_mark:
+:caution-caption: :fire:
+:warning-caption: :warning:
+endif::[]
+
 = Open Distribution Initiative
 
 The Open Distribution Initiative is a concept for developing more scalable and
 federated means of distribution free and open source software artifacts.
 
-== Distribution Challenges
-
-Distribution of artifacts for free and open source projects faces a number of
-challenges, not the least of which is financial. Many major projects rely on
-corporate funding for CDN or other hosting services to distribute key artifacts
-to their downstream developers and end-users..For smaller projects, corporate
-or academic support for their software distribution is not an option leaving
-many to rely heavily on proprietary services like GitHub (Releases/Packages) or
-platform-specific artifact repositories (such as
-link:https://rubygems.org[Rubygems.org],
-link:https://pypi.org/[Python Package Index], etc).
-
-Some "first generation projects" (those that predate or are concurrent with the SourceForge era) may rely on mirror networks for artifact distribution. The patchwork of mirrors powering the
-link:https://apache.org[Apache Software Foundation],
-link:https://debian.org[Debian], or
-link:https://opensuse.org[openSUSE]
-helps them distribute many terabytes of data per month, but typically relies on
-a handful of volunteers in order to remain viable. Additionally, mirroring
-relationships are typically formed between individuals with significant systems
-administration experience, leading to a very clear skew towards operating
-systems and infrastructure tools being distributed through these mirroring
-networks.
-
-=== Corporate Funding
-
-There's nothing wrong with corporate funding for infrastructure. Solely relying
-on corporate generosity can and does present challenges for a number of
-projects seeking to maintain funding continuity in their budgets.
-
-Some projects which rely heavily on corporate generosity for their distribution are:
-
-* link:https://maven.org[Maven Central] which is owned and operated by Sonatype, Inc.
-* link:https://npm.org[NPM] which is owned and operated by Microsoft.
-* GitHub releases, which is owned and operated by Microsoft.
-
-=== Mixed Funding
-
-* link:https://pypi.org/[Python Package Index] which is supported by the Python Software Foundation, with infrastructure sponsorship from AWS, Google, Fastly.
-* link:https://rubygems.org[Rubygems.org] which is supported by Ruby Together and Ruby Central, with infrastructure sponsorship from Fastly.
-* link:https://jenkins.io[Jenkins] which is supported by the Continuous Delivery Foundation, a corporate trade organization, with a non-trivial part of distribution served via a volunteer-managed mirror network.
-* link:https://opensuse.org[openSUSE] which is sponsored by SUSE GmbH in addition to other companies, with a non-trivial part of distribution served via a volunteer-managed mirror network.
-
+toc::[]
 
 == Concept
 
@@ -164,6 +133,16 @@ begin directing traffic for the artifacts assigned to that relay.
 
 ==== Clean up
 
+Relays must specify how much space they are willing to host and are responsible
+for performing some level of "garbage collection" on older lesser-used
+artifacts to ensure that space for "newer" artifacts in the catalog are made.
+
+[NOTE]
+====
+The ODI Directory may request some artifacts be expunged which have known
+severe security defects or have otherwise been corrupted.
+====
+
 === Directories
 
 The ODI Directory is the most complex part of the equation and is responsible
@@ -196,4 +175,45 @@ The exact size and shape of ODI catalogs has yet to be defined
   level of granularity is useful here? The "Group" in an rpmspec might be a
   useful pattern to emulate here.
 
+== Distribution Challenges
+
+Distribution of artifacts for free and open source projects faces a number of
+challenges, not the least of which is financial. Many major projects rely on
+corporate funding for CDN or other hosting services to distribute key artifacts
+to their downstream developers and end-users..For smaller projects, corporate
+or academic support for their software distribution is not an option leaving
+many to rely heavily on proprietary services like GitHub (Releases/Packages) or
+platform-specific artifact repositories (such as
+link:https://rubygems.org[Rubygems.org],
+link:https://pypi.org/[Python Package Index], etc).
+
+Some "first generation projects" (those that predate or are concurrent with the SourceForge era) may rely on mirror networks for artifact distribution. The patchwork of mirrors powering the
+link:https://apache.org[Apache Software Foundation],
+link:https://debian.org[Debian], or
+link:https://opensuse.org[openSUSE]
+helps them distribute many terabytes of data per month, but typically relies on
+a handful of volunteers in order to remain viable. Additionally, mirroring
+relationships are typically formed between individuals with significant systems
+administration experience, leading to a very clear skew towards operating
+systems and infrastructure tools being distributed through these mirroring
+networks.
+
+=== Corporate Funding
+
+There's nothing wrong with corporate funding for infrastructure. Solely relying
+on corporate generosity can and does present challenges for a number of
+projects seeking to maintain funding continuity in their budgets.
+
+Some projects which rely heavily on corporate generosity for their distribution are:
+
+* link:https://maven.org[Maven Central] which is owned and operated by Sonatype, Inc.
+* link:https://npm.org[NPM] which is owned and operated by Microsoft.
+* GitHub releases, which is owned and operated by Microsoft.
+
+=== Mixed Funding
+
+* link:https://pypi.org/[Python Package Index] which is supported by the Python Software Foundation, with infrastructure sponsorship from AWS, Google, Fastly.
+* link:https://rubygems.org[Rubygems.org] which is supported by Ruby Together and Ruby Central, with infrastructure sponsorship from Fastly.
+* link:https://jenkins.io[Jenkins] which is supported by the Continuous Delivery Foundation, a corporate trade organization, with a non-trivial part of distribution served via a volunteer-managed mirror network.
+* link:https://opensuse.org[openSUSE] which is sponsored by SUSE GmbH in addition to other companies, with a non-trivial part of distribution served via a volunteer-managed mirror network.
 
