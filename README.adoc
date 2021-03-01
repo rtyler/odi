@@ -109,7 +109,7 @@ certificate. Additionally, they must run the `odi-relayd` in order to ensure
 they are keeping the proper synchronization with the configured ODI
 Directories.
 
-==== Seeding 
+==== Seeding
 
 In order for an ODI Relay to work properly, it must have a catalog downloaded
 and ready to serve. While not yet defined, this is expected to be handled through a combination of relay-specified configuration such as:
@@ -150,10 +150,84 @@ for both maintaining relationships with active relays but also other
 directories. The directory-to-directory federation helps ensure that no single
 directory may end up as a single point of failure.
 
-Statistics need to be kept to identify "hot" artifacts which require more
-capacity. The directory is also responsible for notifying relays of new artifacts in
-their respective catalogs.
+Fundamentally a Directory must have a large amount of disk space as its
+intended to provide the "source of truth" for all artifacts it expects its
+relays to serve. In the future directories may provide a mode of operation
+where only relays and origin servers have copies of the artifact.
 
+Statistics need to be kept to identify "hot" artifacts which require more
+capacity. The directory **may** request more relays to host artifacts which
+require more capacity. The directory is also responsible for notifying relays
+of new artifacts in their respective catalogs.
+
+
+==== Federation
+
+ODI Directories are intended to be federated whenever possible to provide
+resiliency. The two forms of federation supported by directories are
+**references** and **links**. Taking inspiration from
+link:https://joinpeertube.org[Peertube], these two modes of federation allow
+for some directories to reference others, providing pointers to artifacts or
+even allowing a "directory of directories" to exist. Alternatively, when two
+directories are _linked_ they will both effectively be serving the same
+catalog(s) with its artifacts and metadata.
+
+A directory which only contains references to other directories can be thought
+of as a meta-directory and can act as a single reference point for clients. The
+meta-directory would receive requests for artifacts, determine which directory
+owns the catalog containing the artifact, and redirect the request off to that
+directory server where the typical directory/relay flow would occur. The
+meta-directory may organize directories it references which contain identical
+catalogs into geographical or other groupings for faster distribution to
+clients.
+
+.An example of a global distribution network via the Open Distribution Initiative
+[source]
+----
+                                      eu.freebsd.org          mirrors.xmission.com
+dist.freebsd.org
+                                       ODI Directory           ODI Relay
+ ODI Meta-directory                   +---------------+       +---------------+
++--------------------+                |               |       | +-----------+ |
+|                    |                | +-----------+ |    +----> Catalog A | |
+| Georeference (EU)  +------------------> Catalog A <---+  |  | +-----------+ |
+|                    |                | +-----------+ | |  |  | +-----------+ |
+|                    |                |               | |  |  | | Catalog B | |
+| Georeference* (NA) +-------+        +---------------+ |  |  | +-----------+ |
+|                    |       |                          |  |  +---------------+
+|                    |       |        na.freebsd.org    |  |
+| Georeference (CN)  +-----+ |                          |  |
+|                    |     | |         ODI Directory    |  |
+|                    |     | |        +---------------+ |  |
++--------------------+     | |        |               | |  |
+                           | |        | +-----------+ | |  |
+                           | +----------> Catalog A +------+
+                           |          | +-----------+ | |
+                           |          |               | |
+                           |          +---------------+ |
+                           |                            |
+                           |          cn.freebsd.org    |
+                           |                            link
+                           |           ODI Directory    |
+                           |          +---------------+ |
+                           |          |               | |
+                           |          | +-----------+ | |
+                           +------------> Catalog A <---+
+                                      | +-----------+ |
+                                      |               |
+                                      +---------------+
+----
+
+In the above example `na.freebsd.org` is considered the canonical directory for
+`Catalog A` to which both `eu.` and `cn.` are linked. The "meta-directory"
+running at `dist.freebsd.org` is configured with geo-references for the
+different global regions.
+
+[IMPORTANT]
+====
+At this time federation of artifact statistics is not planned. Aside from novel
+graphs it's not clear what value aggregation of statistics might provide.
+====
 
 === Catalogs
 
